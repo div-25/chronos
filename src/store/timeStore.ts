@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { db, TimeEntry, TimeSegment } from '@/lib/db';
+import { toUTC } from '@/lib/utils';
 
 interface TimeState {
   currentEntry: TimeEntry | null;
@@ -32,7 +33,8 @@ export const useTimeStore = create<TimeState>((set, get) => ({
   
   startTimer: async (title: string, notes: string = '', tags: string[] = []) => {
     try {
-      const now = new Date();
+      // Store time in UTC
+      const now = toUTC(new Date());
       
       // First, stop any currently running timer
       const { isTimerRunning, currentEntry } = get();
@@ -81,13 +83,15 @@ export const useTimeStore = create<TimeState>((set, get) => ({
       const { isTimerRunning, isPaused, currentEntry, currentDisplayTime } = get();
       
       if (isTimerRunning && !isPaused && currentEntry && currentEntry.id) {
-        const now = new Date();
+        // Store time in UTC
+        const now = toUTC(new Date());
         
         // Get the current active segment (last segment in the array)
         const currentSegmentIndex = currentEntry.segments.length - 1;
         const currentSegment = currentEntry.segments[currentSegmentIndex];
         
         // Calculate duration for this segment
+        // Both times are in UTC, so we can calculate duration directly
         const segmentDuration = Math.floor(
           (now.getTime() - new Date(currentSegment.startTime).getTime()) / 1000
         );
@@ -136,7 +140,8 @@ export const useTimeStore = create<TimeState>((set, get) => ({
       const { isPaused, currentEntry, totalAccumulatedTime } = get();
       
       if (isPaused && currentEntry && currentEntry.id) {
-        const now = new Date();
+        // Store time in UTC
+        const now = toUTC(new Date());
         
         // Create a new segment
         const newSegment: TimeSegment = {
@@ -178,7 +183,8 @@ export const useTimeStore = create<TimeState>((set, get) => ({
       const { currentEntry, isPaused } = get();
       if (!currentEntry || !currentEntry.id) return;
       
-      const now = new Date();
+      // Store time in UTC
+      const now = toUTC(new Date());
       
       // If we're not paused, we need to end the current segment
       if (!isPaused) {
@@ -187,6 +193,7 @@ export const useTimeStore = create<TimeState>((set, get) => ({
         const currentSegment = currentEntry.segments[currentSegmentIndex];
         
         // Calculate duration for this segment
+        // Both times are in UTC, so we can calculate duration directly
         const segmentDuration = Math.floor(
           (now.getTime() - new Date(currentSegment.startTime).getTime()) / 1000
         );
@@ -281,7 +288,8 @@ export const useTimeStore = create<TimeState>((set, get) => ({
         return;
       }
       
-      const now = new Date();
+      // Store time in UTC
+      const now = toUTC(new Date());
       
       // Create a new segment for this entry
       const newSegment: TimeSegment = {
@@ -328,26 +336,12 @@ export const useTimeStore = create<TimeState>((set, get) => ({
   
   getRecentEntries: async () => {
     try {
-      // Try to get entries ordered by updatedAt
-      try {
-        return await db.timeEntries
-          .orderBy('updatedAt')
-          .reverse()
-          .limit(50)
-          .toArray();
-      } catch (error) {
-        console.warn("Error ordering by updatedAt, falling back to default order:", error);
-        
-        // Fallback to getting all entries and sorting them in memory
-        const allEntries = await db.timeEntries.toArray();
-        return allEntries
-          .sort((a, b) => {
-            const dateA = new Date(a.updatedAt || a.createdAt || 0);
-            const dateB = new Date(b.updatedAt || b.createdAt || 0);
-            return dateB.getTime() - dateA.getTime();
-          })
-          .slice(0, 50);
-      }
+      // Get entries ordered by updatedAt
+      return await db.timeEntries
+        .orderBy('updatedAt')
+        .reverse()
+        .limit(50)
+        .toArray();
     } catch (error) {
       console.error("Error fetching entries:", error);
       return [];
@@ -370,7 +364,7 @@ export const useTimeStore = create<TimeState>((set, get) => ({
         segments: entry.segments,
         duration: totalDuration,
         tags: entry.tags,
-        updatedAt: new Date(),
+        updatedAt: toUTC(new Date()),
       };
       
       await db.timeEntries.update(entry.id, updateObj);

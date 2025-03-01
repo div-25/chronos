@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTimeStore } from '@/store/timeStore';
 import { TimeEntry, TimeSegment } from '@/lib/db';
+import { toUTC, toLocalTime, formatDateForInput } from '@/lib/utils';
 
 interface EditEntryModalProps {
   entry: TimeEntry | null;
@@ -28,12 +29,18 @@ export function EditEntryModal({ entry, onClose }: EditEntryModalProps) {
   
   useEffect(() => {
     if (entry) {
-      // Convert segments dates to string for input fields
-      const formattedSegments = entry.segments.map(segment => ({
-        startTime: segment.startTime ? new Date(segment.startTime).toISOString().slice(0, 16) : '',
-        endTime: segment.endTime ? new Date(segment.endTime).toISOString().slice(0, 16) : null,
-        duration: segment.duration
-      }));
+      // Convert segments dates from UTC to local time for input fields
+      const formattedSegments = entry.segments.map(segment => {
+        // Convert UTC dates to local time
+        const localStartTime = segment.startTime ? toLocalTime(new Date(segment.startTime)) : null;
+        const localEndTime = segment.endTime ? toLocalTime(new Date(segment.endTime)) : null;
+        
+        return {
+          startTime: formatDateForInput(localStartTime),
+          endTime: localEndTime ? formatDateForInput(localEndTime) : null,
+          duration: segment.duration
+        };
+      });
       
       setFormData({
         title: entry.title,
@@ -49,16 +56,26 @@ export function EditEntryModal({ entry, onClose }: EditEntryModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Convert string dates back to Date objects for segments
+    // Convert string dates back to Date objects for segments (from local to UTC)
     const updatedSegments: TimeSegment[] = (formData.segments || []).map((segment) => {
-      // Create a new segment with the form data
-      const startTime = segment.startTime 
-        ? new Date(segment.startTime) 
-        : new Date();
-        
-      const endTime = segment.endTime 
-        ? new Date(segment.endTime) 
-        : null;
+      // Parse local time input strings to Date objects
+      let localStartTime: Date | null = null;
+      let localEndTime: Date | null = null;
+      
+      if (segment.startTime) {
+        // Parse the local datetime string (YYYY-MM-DDTHH:MM)
+        localStartTime = new Date(segment.startTime);
+      } else {
+        localStartTime = new Date(); // Default to current time if empty
+      }
+      
+      if (segment.endTime) {
+        localEndTime = new Date(segment.endTime);
+      }
+      
+      // Convert local times to UTC for storage
+      const startTime = toUTC(localStartTime);
+      const endTime = localEndTime ? toUTC(localEndTime) : null;
       
       // Calculate duration for this segment
       const duration = endTime
@@ -85,7 +102,7 @@ export function EditEntryModal({ entry, onClose }: EditEntryModalProps) {
       tags: formData.tags || entry.tags,
       segments: updatedSegments,
       duration: totalDuration,
-      updatedAt: new Date(),
+      updatedAt: toUTC(new Date()),
     };
     
     await updateEntry(updatedEntry);

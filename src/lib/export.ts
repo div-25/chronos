@@ -1,4 +1,5 @@
 import { db, TimeEntry, TimeSegment } from './db';
+import { toUTC } from './utils';
 
 export async function exportToCSV(): Promise<string> {
   const entries = await db.timeEntries.toArray();
@@ -75,86 +76,78 @@ export async function importFromCSV(file: File): Promise<void> {
     
     reader.onload = async (e) => {
       try {
-        const csvContent = e.target?.result as string;
-        if (!csvContent) {
-          throw new Error('Failed to read CSV file');
+        const content = e.target?.result as string;
+        if (!content) {
+          throw new Error("Failed to read file content");
         }
         
-        // Parse CSV content
-        const lines = csvContent.split('\n');
+        // Split content into lines
+        const lines = content.split(/\r?\n/);
         if (lines.length < 2) {
-          throw new Error('CSV file is empty or invalid');
+          throw new Error("CSV file is empty or invalid");
         }
         
+        // Parse header
         const headers = parseCSVLine(lines[0]);
         
-        // Validate headers
-        const requiredHeaders = [
-          'ID', 'Title', 'Notes', 'Tags', 'Total Duration (sec)', 
-          'Created At', 'Updated At', 'Segment Index', 
-          'Segment Start Time', 'Segment End Time', 'Segment Duration (sec)'
-        ];
-        
-        // Check if this is a new format export (with all segments) or old format
-        const isNewFormat = requiredHeaders.every(header => headers.includes(header));
-        
-        if (!isNewFormat) {
-          // Check if it's the old format
-          const oldRequiredHeaders = ['Title', 'Start Time', 'End Time', 'Duration (sec)', 'Tags', 'Notes'];
-          const isOldFormat = oldRequiredHeaders.every(header => headers.includes(header));
-          
-          if (!isOldFormat) {
-            throw new Error('Invalid CSV format. Please use a file exported from Chronos.');
-          }
-          
-          // Process old format
-          return await processOldFormatCSV(lines, headers);
+        // Verify this is the correct format (with segment columns)
+        if (!headers.includes('Segment Index')) {
+          throw new Error('Invalid CSV format. Please use a file exported from Chronos.');
         }
         
-        // Process new format (with segments)
-        // Group rows by entry ID
-        const entriesMap = new Map<string, {
-          entry: Partial<TimeEntry>,
-          segments: TimeSegment[]
-        }>();
+        // Process CSV
+        const entriesMap = new Map<string, { entry: Partial<TimeEntry>, segments: TimeSegment[] }>();
         
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue; // Skip empty lines
           
           const values = parseCSVLine(lines[i]);
-          if (values.length !== headers.length) {
-            console.warn(`Skipping line ${i+1}: column count mismatch`);
-            continue;
-          }
+          const rowData: Record<string, string> = {};
           
-          // Create a map of header -> value
-          const rowData = headers.reduce((obj, header, index) => {
-            obj[header] = values[index];
-            return obj;
-          }, {} as Record<string, string>);
+          // Map values to column names
+          headers.forEach((header, index) => {
+            if (index < values.length) {
+              rowData[header] = values[index];
+            }
+          });
           
+          // Extract entry data
           const id = rowData['ID'];
           if (!id) {
             console.warn(`Skipping line ${i+1}: missing ID`);
             continue;
           }
           
-          // Parse segment data
+          // Extract segment data
           const segmentIndex = parseInt(rowData['Segment Index'], 10);
-          const segmentStartTime = new Date(rowData['Segment Start Time']);
-          const segmentEndTimeStr = rowData['Segment End Time'];
-          const segmentEndTime = segmentEndTimeStr ? new Date(segmentEndTimeStr) : null;
+          if (isNaN(segmentIndex)) {
+            console.warn(`Skipping line ${i+1}: invalid segment index`);
+            continue;
+          }
+          
+          // Parse segment times
+          const startTimeStr = rowData['Segment Start Time'];
+          const endTimeStr = rowData['Segment End Time'];
           const segmentDuration = parseInt(rowData['Segment Duration (sec)'], 10);
           
           // Validate segment data
-          if (isNaN(segmentIndex) || isNaN(segmentDuration) || !isValidDate(segmentStartTime)) {
+          if (!startTimeStr || isNaN(segmentDuration)) {
             console.warn(`Skipping line ${i+1}: invalid segment data`);
             continue;
           }
           
+          // Create segment with UTC times
+          const startTime = toUTC(new Date(startTimeStr));
+          const endTime = endTimeStr ? toUTC(new Date(endTimeStr)) : null;
+          
+          if (!isValidDate(startTime) || (endTimeStr && !isValidDate(endTime as Date))) {
+            console.warn(`Skipping line ${i+1}: invalid date format`);
+            continue;
+          }
+          
           const segment: TimeSegment = {
-            startTime: segmentStartTime,
-            endTime: segmentEndTime,
+            startTime,
+            endTime,
             duration: segmentDuration
           };
           
@@ -223,60 +216,6 @@ export async function importFromCSV(file: File): Promise<void> {
     };
     
     reader.readAsText(file);
-  });
-}
-
-// Process old format CSV (for backward compatibility)
-async function processOldFormatCSV(lines: string[], headers: string[]): Promise<void> {
-  const entries: TimeEntry[] = [];
-  
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue; // Skip empty lines
-    
-    const values = parseCSVLine(lines[i]);
-    
-    const titleIndex = headers.indexOf('Title');
-    const startTimeIndex = headers.indexOf('Start Time');
-    const endTimeIndex = headers.indexOf('End Time');
-    const durationIndex = headers.indexOf('Duration (sec)');
-    const tagsIndex = headers.indexOf('Tags');
-    const notesIndex = headers.indexOf('Notes');
-    
-    const startTime = new Date(values[startTimeIndex]);
-    const endTimeStr = values[endTimeIndex];
-    const endTime = endTimeStr ? new Date(endTimeStr) : null;
-    const duration = parseInt(values[durationIndex], 10);
-    
-    // Validate data
-    if (!values[titleIndex] || !isValidDate(startTime) || isNaN(duration)) {
-      console.warn(`Skipping line ${i+1}: invalid data`);
-      continue;
-    }
-    
-    const entry: TimeEntry = {
-      title: values[titleIndex],
-      segments: [{
-        startTime,
-        endTime,
-        duration
-      }],
-      duration,
-      isActive: endTime === null,
-      tags: values[tagsIndex] ? values[tagsIndex].split(';') : [],
-      notes: values[notesIndex] || '',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    entries.push(entry);
-  }
-  
-  // Clear existing database and add new entries
-  await db.transaction('rw', db.timeEntries, async () => {
-    await db.timeEntries.clear();
-    if (entries.length > 0) {
-      await db.timeEntries.bulkAdd(entries);
-    }
   });
 }
 

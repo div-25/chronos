@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTimeStore } from '@/store/timeStore';
+import { toLocalTime } from '@/lib/utils';
 
 export function useTimer() {
   const {
@@ -38,22 +39,26 @@ export function useTimer() {
       const currentSegmentIndex = currentEntry.segments.length - 1;
       const currentSegment = currentEntry.segments[currentSegmentIndex];
 
+      // Convert UTC stored time to local time for display calculation
+      const startTimeLocal = toLocalTime(new Date(currentSegment.startTime));
+      
       // Calculate time elapsed in current segment
+      const now = new Date();
       const segmentTime = Math.floor(
-        (new Date().getTime() - new Date(currentSegment.startTime).getTime()) / 1000
+        (now.getTime() - startTimeLocal.getTime()) / 1000
       );
 
       // Set elapsed time to current display time plus segment time
-      setElapsedTime(currentDisplayTime + segmentTime);
+      setElapsedTime(segmentTime);
 
       // Set total time to total accumulated time plus segment time
-      setTotalTime(totalAccumulatedTime);
+      setTotalTime(totalAccumulatedTime + segmentTime);
 
       // Start animation frame for running timer
       const updateTimer = () => {
         const now = Date.now();
         const elapsed = Math.floor(
-          (now - new Date(currentSegment.startTime).getTime()) / 1000
+          (now - startTimeLocal.getTime()) / 1000
         );
 
         setElapsedTime(elapsed);
