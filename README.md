@@ -1,8 +1,36 @@
-# Chronos - Your personal productivity manager!
+# Chronos - Your Personal Productivity Manager
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+[![Next.js](https://img.shields.io/badge/Next.js-15.2.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.0.0-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.txt)
 
-## Getting Started
+## 📝 Description
+
+Chronos is a time tracking application designed to help you monitor and manage your time effectively. With a clean interface and focused functionality, Chronos makes it easy to track how you spend your time on different tasks.
+
+## ✨ Features
+
+- ⏱️ Time tracking with start, pause, and stop functionality
+- 📊 Basic statistics by tags
+- 📝 Add notes to time entries
+- 🏷️ Tag-based organization
+- 💾 Offline support with IndexedDB
+- 📱 Responsive design
+
+## 🛠️ Technologies
+
+Chronos is built with modern web technologies:
+
+- **Frontend Framework**: Next.js 15.2.0 with React 19
+- **Language**: TypeScript
+- **Styling**: TailwindCSS
+- **State Management**: Zustand
+- **Database**: Dexie.js (IndexedDB wrapper)
+- **ID Generation**: UUID
+
+## 🚀 Getting Started
 
 First, run the development server:
 
@@ -16,23 +44,12 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔒 Privacy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All your time tracking data is stored locally in your browser using IndexedDB, ensuring your personal information never leaves your device.
 
-## Learn More
+## 📄 License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
