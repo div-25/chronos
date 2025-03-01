@@ -49,7 +49,7 @@ export function TagStats() {
     }
     
     const now = new Date();
-    let cutoffDate = new Date();
+    const cutoffDate = new Date();
     
     switch (selectedPeriod) {
       case 'day':
@@ -136,7 +136,7 @@ export function TagStats() {
           <div className="flex space-x-2">
             <select
               value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
+              onChange={(e) => setSelectedPeriod(e.target.value as 'day' | 'week' | 'month' | 'all')}
               className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
             >
               <option value="day">Last 24 hours</option>
