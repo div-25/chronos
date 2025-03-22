@@ -1,13 +1,17 @@
-import { db, TimeEntry, TimeSegment } from './db';
+import { db, TimeSegment, Project } from './db';
 import { toUTC } from './utils';
 
 export async function exportToCSV(): Promise<string> {
-  const entries = await db.timeEntries.toArray();
+  const projects = await db.projects.toArray();
   
-  // Create CSV header
+  // Updated CSV headers to include project-specific fields
   const headers = [
     'ID',
     'Title',
+    'Parent ID',
+    'Path',
+    'Depth',
+    'Child Count',
     'Notes',
     'Tags',
     'Total Duration (sec)',
@@ -19,20 +23,24 @@ export async function exportToCSV(): Promise<string> {
     'Segment Duration (sec)'
   ];
   
-  // Format each entry as CSV rows (one row per segment)
+  // Format each project as CSV rows (one row per segment)
   const rows: string[][] = [];
   
-  entries.forEach(entry => {
-    // For each entry, create a row for each segment
-    entry.segments.forEach((segment, index) => {
+  projects.forEach(project => {
+    // For each project, create a row for each segment
+    project.segments.forEach((segment, index) => {
       rows.push([
-        entry.id || '',
-        entry.title,
-        entry.notes || '',
-        entry.tags.join(';'),
-        entry.duration.toString(),
-        entry.createdAt.toISOString(),
-        entry.updatedAt.toISOString(),
+        project.id || '',
+        project.title,
+        project.parentId || '',
+        project.path.join(';'),
+        project.depth.toString(),
+        project.childCount.toString(),
+        project.notes || '',
+        project.tags.join(';'),
+        project.duration.toString(),
+        project.createdAt.toISOString(),
+        project.updatedAt.toISOString(),
         index.toString(),
         segment.startTime.toISOString(),
         segment.endTime ? segment.endTime.toISOString() : '',
@@ -81,127 +89,81 @@ export async function importFromCSV(file: File): Promise<void> {
           throw new Error("Failed to read file content");
         }
         
-        // Split content into lines
         const lines = content.split(/\r?\n/);
         if (lines.length < 2) {
           throw new Error("CSV file is empty or invalid");
         }
         
-        // Parse header
         const headers = parseCSVLine(lines[0]);
         
-        // Verify this is the correct format (with segment columns)
-        if (!headers.includes('Segment Index')) {
-          throw new Error('Invalid CSV format. Please use a file exported from Chronos.');
-        }
+        // Detect if this is an old format (TimeEntry) or new format (Project)
+        const isOldFormat = !headers.includes('Parent ID');
         
         // Process CSV
-        const entriesMap = new Map<string, { entry: Partial<TimeEntry>, segments: TimeSegment[] }>();
+        const projectsMap = new Map<string, { 
+          project: Partial<Project>, 
+          segments: TimeSegment[] 
+        }>();
         
         for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue; // Skip empty lines
+          if (!lines[i].trim()) continue;
           
           const values = parseCSVLine(lines[i]);
           const rowData: Record<string, string> = {};
           
-          // Map values to column names
           headers.forEach((header, index) => {
             if (index < values.length) {
               rowData[header] = values[index];
             }
           });
           
-          // Extract entry data
           const id = rowData['ID'];
           if (!id) {
             console.warn(`Skipping line ${i+1}: missing ID`);
             continue;
           }
           
+          
           // Extract segment data
-          const segmentIndex = parseInt(rowData['Segment Index'], 10);
-          if (isNaN(segmentIndex)) {
-            console.warn(`Skipping line ${i+1}: invalid segment index`);
-            continue;
-          }
+          const segment = parseSegmentData(rowData);
+          if (!segment) continue;
           
-          // Parse segment times
-          const startTimeStr = rowData['Segment Start Time'];
-          const endTimeStr = rowData['Segment End Time'];
-          const segmentDuration = parseInt(rowData['Segment Duration (sec)'], 10);
-          
-          // Validate segment data
-          if (!startTimeStr || isNaN(segmentDuration)) {
-            console.warn(`Skipping line ${i+1}: invalid segment data`);
-            continue;
-          }
-          
-          // Create segment with UTC times
-          const startTime = toUTC(new Date(startTimeStr));
-          const endTime = endTimeStr ? toUTC(new Date(endTimeStr)) : null;
-          
-          if (!isValidDate(startTime) || (endTimeStr && !isValidDate(endTime as Date))) {
-            console.warn(`Skipping line ${i+1}: invalid date format`);
-            continue;
-          }
-          
-          const segment: TimeSegment = {
-            startTime,
-            endTime,
-            duration: segmentDuration
-          };
-          
-          // If this is the first segment for this entry, create the entry
-          if (!entriesMap.has(id)) {
-            const totalDuration = parseInt(rowData['Total Duration (sec)'], 10);
-            const createdAt = new Date(rowData['Created At']);
-            const updatedAt = new Date(rowData['Updated At']);
+          // If this is the first segment for this project
+          if (!projectsMap.has(id)) {
+            const projectData = isOldFormat ? 
+              convertTimeEntryToProject(rowData) : 
+              parseProjectData(rowData);
             
-            // Validate entry data
-            if (isNaN(totalDuration) || !isValidDate(createdAt) || !isValidDate(updatedAt)) {
-              console.warn(`Skipping entry ${id}: invalid entry data`);
-              continue;
-            }
-            
-            entriesMap.set(id, {
-              entry: {
-                id,
-                title: rowData['Title'],
-                notes: rowData['Notes'],
-                tags: rowData['Tags'] ? rowData['Tags'].split(';') : [],
-                duration: totalDuration,
-                isActive: false, // Will be updated based on segments
-                createdAt,
-                updatedAt
-              },
+            projectsMap.set(id, {
+              project: projectData,
               segments: []
             });
           }
           
-          // Add segment to the entry
-          const entryData = entriesMap.get(id)!;
-          entryData.segments[segmentIndex] = segment;
+          // Add segment to the project
+          const projectData = projectsMap.get(id)!;
+          const segmentIndex = parseInt(rowData['Segment Index'], 10);
+          projectData.segments[segmentIndex] = segment;
         }
         
-        // Convert map to array of entries
-        const entries: TimeEntry[] = [];
+        // Convert map to array of projects
+        const projects: Project[] = [];
         
-        entriesMap.forEach(({ entry, segments }) => {
-          // Check if any segment is active (no end time)
+        projectsMap.forEach(({ project, segments }) => {
           const hasActiveSegment = segments.some(segment => segment.endTime === null);
           
-          entries.push({
-            ...entry,
+          projects.push({
+            ...project,
             segments,
             isActive: hasActiveSegment
-          } as TimeEntry);
+          } as Project);
         });
         
-        // Clear existing database and add new entries
-        await db.transaction('rw', db.timeEntries, async () => {
-          await db.timeEntries.clear();
-          if (entries.length > 0) {
-            await db.timeEntries.bulkAdd(entries);
+        // Update database
+        await db.transaction('rw', db.projects, async () => {
+          await db.projects.clear();
+          if (projects.length > 0) {
+            await db.projects.bulkAdd(projects);
           }
         });
         
@@ -211,12 +173,57 @@ export async function importFromCSV(file: File): Promise<void> {
       }
     };
     
-    reader.onerror = () => {
-      reject(new Error('Failed to read the file'));
-    };
-    
+    reader.onerror = () => reject(new Error('Failed to read the file'));
     reader.readAsText(file);
   });
+}
+
+// Helper functions for parsing data
+function parseSegmentData(rowData: Record<string, string>): TimeSegment | null {
+  const startTime = toUTC(new Date(rowData['Segment Start Time']));
+  const endTimeStr = rowData['Segment End Time'];
+  const endTime = endTimeStr ? toUTC(new Date(endTimeStr)) : null;
+  const duration = parseInt(rowData['Segment Duration (sec)'], 10);
+  
+  if (!isValidDate(startTime) || (endTimeStr && !isValidDate(endTime as Date)) || isNaN(duration)) {
+    return null;
+  }
+  
+  return { startTime, endTime, duration };
+}
+
+function convertTimeEntryToProject(rowData: Record<string, string>): Partial<Project> {
+  return {
+    id: rowData['ID'],
+    title: rowData['Title'],
+    notes: rowData['Notes'],
+    tags: rowData['Tags'] ? rowData['Tags'].split(';') : [],
+    duration: parseInt(rowData['Total Duration (sec)'], 10),
+    createdAt: new Date(rowData['Created At']),
+    updatedAt: new Date(rowData['Updated At']),
+    parentId: null,
+    path: [],
+    depth: 0,
+    childCount: 0,
+    isActive: false
+  };
+}
+
+function parseProjectData(rowData: Record<string, string>): Partial<Project> {
+  return {
+    id: rowData['ID'],
+    title: rowData['Title'],
+    parentId: rowData['Parent ID'] || null,
+    path: rowData['Path'] ? rowData['Path'].split(';') : [],
+    depth: parseInt(rowData['Depth'], 10) || 0,
+    childCount: parseInt(rowData['Child Count'], 10) || 0,
+    notes: rowData['Notes'],
+    tags: rowData['Tags'] ? rowData['Tags'].split(';') : [],
+    duration: parseInt(rowData['Total Duration (sec)'], 10),
+    createdAt: new Date(rowData['Created At']),
+    updatedAt: new Date(rowData['Updated At']),
+    isActive: false
+  };
 }
 
 // Helper function to parse CSV line considering quoted values

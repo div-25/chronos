@@ -41,7 +41,7 @@ export function useTimer() {
 
       // Convert UTC stored time to local time for display calculation
       const startTimeLocal = toLocalTime(new Date(currentSegment.startTime));
-      
+
       // Calculate time elapsed in current segment
       const now = new Date();
       const segmentTime = Math.floor(
@@ -89,11 +89,14 @@ export function useTimer() {
     };
   }, [isTimerRunning, isPaused, currentEntry, currentDisplayTime, totalAccumulatedTime, updateDisplayTime]);
 
-  const handleStartTimer = useCallback((title: string, notes: string = '', tags: string[] = []) => {
-    if (title.trim()) {
-      startTimer(title, notes, tags);
-    }
-  }, [startTimer]);
+  const handleStartTimer = useCallback(
+    (title: string, notes: string = '', tags: string[] = [],
+      parentId?: string | null
+    ) => {
+      if (title.trim()) {
+        startTimer(title, notes, tags, parentId);
+      }
+    }, [startTimer]);
 
   // Get the total number of sessions for the current entry
   const getSessionCount = useCallback(() => {

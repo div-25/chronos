@@ -2,18 +2,18 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTimeStore } from '@/store/timeStore';
-import { TimeEntry } from '@/lib/db';
+import { Project } from '@/lib/db';
 import { formatDate, formatDuration } from '@/lib/utils';
 import { EditEntryModal } from './EditEntryModal';
 
-export function TimeEntriesList() {
-  const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [filteredEntries, setFilteredEntries] = useState<TimeEntry[]>([]);
+export function ProjectsList() {
+  const [entries, setEntries] = useState<Project[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const { getRecentEntries, deleteEntry, resumeTask, currentEntry } = useTimeStore();
-  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Project | null>(null);
   
   const loadEntries = useCallback(async () => {
     try {
@@ -29,7 +29,7 @@ export function TimeEntriesList() {
       setAvailableTags(Array.from(tags).sort());
       
     } catch (error) {
-      console.error("Error loading entries:", error);
+      console.error("Error loading projects:", error);
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +76,7 @@ export function TimeEntriesList() {
   };
   
   // Helper function to get the most recent segment's start time
-  const getLatestStartTime = useCallback((entry: TimeEntry) => {
+  const getLatestStartTime = useCallback((entry: Project) => {
     if (entry.segments && entry.segments.length > 0) {
       const latestSegment = entry.segments[entry.segments.length - 1];
       return latestSegment.startTime;
@@ -85,7 +85,7 @@ export function TimeEntriesList() {
   }, []);
   
   // Helper function to check if an entry is the current active one
-  const isCurrentEntry = useCallback((entry: TimeEntry) => {
+  const isCurrentEntry = useCallback((entry: Project) => {
     return currentEntry?.id === entry.id;
   }, [currentEntry]);
   

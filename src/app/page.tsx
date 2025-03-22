@@ -1,7 +1,7 @@
 "use client";
 
 import { TimerControl } from '@/components/timer/TimerControl';
-import { TimeEntriesList } from '@/components/timer/TimeEntriesList';
+import { ProjectsList } from '@/components/timer/ProjectsList';
 
 export default function HomePage() {
   return (
@@ -10,7 +10,7 @@ export default function HomePage() {
         <h1 className="text-3xl font-bold">Chronos Dashboard</h1>
       </div>
       <TimerControl />
-      <TimeEntriesList />
+      <ProjectsList />
     </main>
   );
 }

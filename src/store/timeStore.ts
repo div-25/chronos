@@ -1,26 +1,45 @@
 "use client";
 
-import { create } from 'zustand';
-import { v4 as uuidv4 } from 'uuid';
-import { db, TimeEntry, TimeSegment } from '@/lib/db';
-import { toUTC } from '@/lib/utils';
+import { create } from "zustand";
+import { v4 as uuidv4 } from "uuid";
+import { db, Project, TimeSegment } from "@/lib/db";
+import { toUTC } from "@/lib/utils";
+
+const wouldCreateCycle = async (
+  projectId: string,
+  newParentId: string
+): Promise<boolean> => {
+  if (projectId === newParentId) return true;
+
+  const parent = await db.projects.get(newParentId);
+  if (!parent) return false;
+
+  // Check if the project is in the parent's path
+  return parent.path.includes(projectId);
+};
 
 interface TimeState {
-  currentEntry: TimeEntry | null;
+  currentEntry: Project | null;
   isTimerRunning: boolean;
   isPaused: boolean;
-  currentDisplayTime: number; // Time for current session only
-  totalAccumulatedTime: number; // Total time across all segments
-  isUpdatingDisplayTime: boolean; // Flag to prevent excessive updates
-  startTimer: (title: string, notes?: string, tags?: string[]) => Promise<void>;
+  currentDisplayTime: number;
+  totalAccumulatedTime: number;
+  isUpdatingDisplayTime: boolean;
+  startTimer: (
+    title: string,
+    notes?: string,
+    tags?: string[],
+    parentId?: string | null
+  ) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
   stopTimer: () => Promise<void>;
   resumeTask: (entryId: string) => Promise<void>;
   updateDisplayTime: (time: number) => void;
-  getRecentEntries: () => Promise<TimeEntry[]>;
-  updateEntry: (entry: TimeEntry) => Promise<void>;
+  getRecentEntries: () => Promise<Project[]>;
+  updateEntry: (entry: Project) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
+  setParentForCurrentEntry: (parentId: string | null) => Promise<void>;
 }
 
 export const useTimeStore = create<TimeState>((set, get) => ({
@@ -30,354 +49,457 @@ export const useTimeStore = create<TimeState>((set, get) => ({
   currentDisplayTime: 0,
   totalAccumulatedTime: 0,
   isUpdatingDisplayTime: false,
-  
-  startTimer: async (title: string, notes: string = '', tags: string[] = []) => {
+
+  startTimer: async (
+    title: string,
+    notes = "",
+    tags: string[] = [],
+    parentId: string | null = null
+  ): Promise<void> => {
     try {
-      // Store time in UTC
       const now = toUTC(new Date());
-      
-      // First, stop any currently running timer
       const { isTimerRunning, currentEntry } = get();
+
       if (isTimerRunning && currentEntry) {
         await get().stopTimer();
       }
-      
-      // Create a new entry with a single segment
+
       const newSegment: TimeSegment = {
         startTime: now,
         endTime: null,
-        duration: 0
+        duration: 0,
       };
-      
-      const newEntry: TimeEntry = {
+
+      let path: string[] = [];
+      let depth = 0;
+
+      if (parentId) {
+        const parent = await db.projects.get(parentId);
+        if (parent?.id) {
+          path = [...parent.path, parent.id];
+          depth = parent.depth + 1;
+          await db.projects.update(parent.id, {
+            childCount: (parent.childCount ?? 0) + 1,
+            updatedAt: now,
+          });
+        }
+      }
+
+      const newEntry: Project = {
         id: uuidv4(),
         title,
         notes,
+        parentId,
+        path,
+        depth,
         segments: [newSegment],
         duration: 0,
         isActive: true,
         tags,
         createdAt: now,
         updatedAt: now,
+        childCount: 0,
       };
-      
-      // Add to database
-      const id = await db.timeEntries.add(newEntry);
-      console.log("Added new entry with ID:", id);
-      
-      // Update state
-      set({ 
-        currentEntry: { ...newEntry, id: id.toString() }, 
+
+      const id = await db.projects.add(newEntry);
+
+      set({
+        currentEntry: { ...newEntry, id: id.toString() },
         isTimerRunning: true,
         isPaused: false,
         currentDisplayTime: 0,
-        totalAccumulatedTime: 0
+        totalAccumulatedTime: 0,
       });
     } catch (error) {
       console.error("Error starting timer:", error);
     }
   },
-  
+
   pauseTimer: async () => {
     try {
-      const { isTimerRunning, isPaused, currentEntry, currentDisplayTime } = get();
-      
+      const { isTimerRunning, isPaused, currentEntry, currentDisplayTime } =
+        get();
+
       if (isTimerRunning && !isPaused && currentEntry && currentEntry.id) {
-        // Store time in UTC
         const now = toUTC(new Date());
-        
-        // Get the current active segment (last segment in the array)
+
         const currentSegmentIndex = currentEntry.segments.length - 1;
         const currentSegment = currentEntry.segments[currentSegmentIndex];
-        
-        // Calculate duration for this segment
-        // Both times are in UTC, so we can calculate duration directly
+
         const segmentDuration = Math.floor(
           (now.getTime() - new Date(currentSegment.startTime).getTime()) / 1000
         );
-        
-        // Update the segment with end time and duration
+
         const updatedSegments = [...currentEntry.segments];
         updatedSegments[currentSegmentIndex] = {
           ...currentSegment,
           endTime: now,
-          duration: segmentDuration
+          duration: segmentDuration,
         };
-        
-        // Calculate total duration across all segments
+
         const totalDuration = updatedSegments.reduce(
-          (total, segment) => total + segment.duration, 
+          (total, segment) => total + segment.duration,
           0
         );
-        
-        // Update entry in database
+
         const updatedEntry = {
           segments: updatedSegments,
           duration: totalDuration,
-          updatedAt: now
+          updatedAt: now,
         };
-        
-        await db.timeEntries.update(currentEntry.id, updatedEntry);
-        
-        // Get the updated entry
-        const refreshedEntry = await db.timeEntries.get(currentEntry.id);
-        
-        // Update state
-        set({ 
+
+        await db.projects.update(currentEntry.id, updatedEntry);
+
+        const refreshedEntry = await db.projects.get(currentEntry.id);
+
+        set({
           currentEntry: refreshedEntry || null,
           isPaused: true,
-          currentDisplayTime: currentDisplayTime, // Preserve the current display time
-          totalAccumulatedTime: totalDuration // Update total accumulated time
+          currentDisplayTime: currentDisplayTime,
+          totalAccumulatedTime: totalDuration,
         });
       }
     } catch (error) {
       console.error("Error pausing timer:", error);
     }
   },
-  
+
   resumeTimer: async () => {
     try {
       const { isPaused, currentEntry, totalAccumulatedTime } = get();
-      
+
       if (isPaused && currentEntry && currentEntry.id) {
-        // Store time in UTC
         const now = toUTC(new Date());
-        
-        // Create a new segment
+
         const newSegment: TimeSegment = {
           startTime: now,
           endTime: null,
-          duration: 0
+          duration: 0,
         };
-        
-        // Add the new segment to the entry
+
         const updatedSegments = [...currentEntry.segments, newSegment];
-        
-        // Update the entry in the database
+
         const updatedEntry = {
           segments: updatedSegments,
-          updatedAt: now
+          updatedAt: now,
         };
-        
-        await db.timeEntries.update(currentEntry.id, updatedEntry);
-        
-        // Get the updated entry
-        const refreshedEntry = await db.timeEntries.get(currentEntry.id);
-        
-        // Update state
+
+        await db.projects.update(currentEntry.id, updatedEntry);
+
+        const refreshedEntry = await db.projects.get(currentEntry.id);
+
         set({
           currentEntry: refreshedEntry || null,
           isTimerRunning: true,
           isPaused: false,
-          currentDisplayTime: 0, // Reset current session timer
-          totalAccumulatedTime: totalAccumulatedTime // Keep total accumulated time
+          currentDisplayTime: 0,
+          totalAccumulatedTime: totalAccumulatedTime,
         });
       }
     } catch (error) {
       console.error("Error resuming timer:", error);
     }
   },
-  
+
   stopTimer: async () => {
     try {
       const { currentEntry, isPaused } = get();
       if (!currentEntry || !currentEntry.id) return;
-      
-      // Store time in UTC
+
       const now = toUTC(new Date());
-      
-      // If we're not paused, we need to end the current segment
+
       if (!isPaused) {
-        // Get the current active segment (last segment in the array)
         const currentSegmentIndex = currentEntry.segments.length - 1;
         const currentSegment = currentEntry.segments[currentSegmentIndex];
-        
-        // Calculate duration for this segment
-        // Both times are in UTC, so we can calculate duration directly
+
         const segmentDuration = Math.floor(
           (now.getTime() - new Date(currentSegment.startTime).getTime()) / 1000
         );
-        
-        // Update the segment
+
         const updatedSegments = [...currentEntry.segments];
         updatedSegments[currentSegmentIndex] = {
           ...currentSegment,
           endTime: now,
-          duration: segmentDuration
+          duration: segmentDuration,
         };
-        
-        // Calculate total duration across all segments
+
         const totalDuration = updatedSegments.reduce(
-          (total, segment) => total + segment.duration, 
+          (total, segment) => total + segment.duration,
           0
         );
-        
-        // Update entry in database
+
         const updatedEntry = {
           segments: updatedSegments,
           duration: totalDuration,
           isActive: false,
-          updatedAt: now
+          updatedAt: now,
         };
-        
-        await db.timeEntries.update(currentEntry.id, updatedEntry);
+
+        await db.projects.update(currentEntry.id, updatedEntry);
       } else {
-        // If we're already paused, just mark the entry as inactive
-        await db.timeEntries.update(currentEntry.id, {
+        await db.projects.update(currentEntry.id, {
           isActive: false,
-          updatedAt: now
+          updatedAt: now,
         });
       }
-      
-      // Update state
-      set({ 
-        currentEntry: null, 
+
+      set({
+        currentEntry: null,
         isTimerRunning: false,
         isPaused: false,
         currentDisplayTime: 0,
-        totalAccumulatedTime: 0
+        totalAccumulatedTime: 0,
       });
     } catch (error) {
       console.error("Error stopping timer:", error);
     }
   },
-  
+
   updateDisplayTime: (time: number) => {
     const { isUpdatingDisplayTime, currentEntry, totalAccumulatedTime } = get();
-    
-    // Prevent excessive updates
+
     if (!isUpdatingDisplayTime) {
-      // Calculate total accumulated time if we have a current entry
       let newTotalAccumulatedTime = totalAccumulatedTime;
-      
+
       if (currentEntry) {
-        // Sum up durations of completed segments
         const completedDuration = currentEntry.segments
-          .filter(segment => segment.endTime !== null)
+          .filter((segment) => segment.endTime !== null)
           .reduce((total, segment) => total + (segment.duration || 0), 0);
-          
-        // Add current session time to get total
+
         newTotalAccumulatedTime = completedDuration + time;
       }
-      
-      set({ 
+
+      set({
         isUpdatingDisplayTime: true,
         currentDisplayTime: time,
-        totalAccumulatedTime: newTotalAccumulatedTime
+        totalAccumulatedTime: newTotalAccumulatedTime,
       });
-      
-      // Reset the flag after a short delay
+
       setTimeout(() => {
         set({ isUpdatingDisplayTime: false });
       }, 1000);
     }
   },
-  
+
   resumeTask: async (entryId: string) => {
     try {
-      // First, stop any currently running timer
       const { isTimerRunning, currentEntry } = get();
       if (isTimerRunning && currentEntry) {
         await get().stopTimer();
       }
-      
-      // Get the entry to resume
-      const entryToResume = await db.timeEntries.get(entryId);
+
+      const entryToResume = await db.projects.get(entryId);
       if (!entryToResume) {
         console.error("Entry not found:", entryId);
         return;
       }
-      
-      // Store time in UTC
+
       const now = toUTC(new Date());
-      
-      // Create a new segment for this entry
+
       const newSegment: TimeSegment = {
         startTime: now,
         endTime: null,
-        duration: 0
+        duration: 0,
       };
-      
-      // Add the new segment to the entry
+
       const updatedSegments = [...entryToResume.segments, newSegment];
-      
-      // Update the entry in the database
+
       const updatedEntry = {
         segments: updatedSegments,
         isActive: true,
-        updatedAt: now
+        updatedAt: now,
       };
-      
-      await db.timeEntries.update(entryId, updatedEntry);
-      
-      // Get the updated entry to use as current entry
-      const refreshedEntry = await db.timeEntries.get(entryId);
-      
-      // Calculate the total duration of completed segments
+
+      await db.projects.update(entryId, updatedEntry);
+
+      const refreshedEntry = await db.projects.get(entryId);
+
       const totalCompletedDuration = entryToResume.segments.reduce(
-        (total, segment) => total + (segment.duration || 0), 
+        (total, segment) => total + (segment.duration || 0),
         0
       );
-      
-      // Update state
+
       set({
         currentEntry: refreshedEntry || null,
         isTimerRunning: true,
         isPaused: false,
-        currentDisplayTime: 0, // Start current session timer from 0
-        totalAccumulatedTime: totalCompletedDuration // Set total accumulated time
+        currentDisplayTime: 0,
+        totalAccumulatedTime: totalCompletedDuration,
       });
-      
-      console.log("Resumed task:", entryId, "with total accumulated time:", totalCompletedDuration);
+
+      console.log(
+        "Resumed task:",
+        entryId,
+        "with total accumulated time:",
+        totalCompletedDuration
+      );
     } catch (error) {
       console.error("Error resuming task:", error);
     }
   },
-  
+
   getRecentEntries: async () => {
     try {
-      // Get entries ordered by updatedAt
-      return await db.timeEntries
-        .orderBy('updatedAt')
+      return await db.projects
+        .orderBy("updatedAt")
         .reverse()
         .limit(50)
         .toArray();
     } catch (error) {
-      console.error("Error fetching entries:", error);
+      console.error("Error fetching projects:", error);
       return [];
     }
   },
-  
-  updateEntry: async (entry: TimeEntry) => {
+
+  updateEntry: async (entry: Project) => {
     if (!entry.id) return;
     try {
-      // Calculate total duration across all segments
       const totalDuration = entry.segments.reduce(
-        (total, segment) => total + segment.duration, 
+        (total, segment) => total + segment.duration,
         0
       );
-      
-      // Create an update object with only the fields we want to update
-      const updateObj = {
-        title: entry.title,
-        notes: entry.notes,
-        segments: entry.segments,
-        duration: totalDuration,
-        tags: entry.tags,
-        updatedAt: toUTC(new Date()),
-      };
-      
-      await db.timeEntries.update(entry.id, updateObj);
+
+      const currentEntry = await db.projects.get(entry.id);
+      if (!currentEntry) return;
+
+      if (currentEntry.parentId !== entry.parentId) {
+        // Check for circular linking if the parent is being changed.
+        if (
+          entry.parentId &&
+          (await wouldCreateCycle(entry.id, entry.parentId))
+        ) {
+          console.error(
+            "Cannot update entry: would create circular dependency"
+          );
+          return;
+        }
+        if (currentEntry.parentId) {
+          const oldParent = await db.projects.get(currentEntry.parentId);
+          if (oldParent) {
+            await db.projects.update(oldParent.id!, {
+              childCount: Math.max(0, (oldParent.childCount || 1) - 1),
+              updatedAt: toUTC(new Date()),
+            });
+          }
+        }
+
+        let newPath: string[] = [];
+        let newDepth = 0;
+
+        if (entry.parentId) {
+          const newParent = await db.projects.get(entry.parentId);
+          if (newParent?.id) {
+            newPath = [...newParent.path, newParent.id];
+            newDepth = newParent.depth + 1;
+            await db.projects.update(newParent.id, {
+              childCount: (newParent.childCount ?? 0) + 1,
+              updatedAt: toUTC(new Date()),
+            });
+          }
+        }
+
+        await db.projects.update(entry.id, {
+          title: entry.title,
+          notes: entry.notes || "",
+          segments: entry.segments,
+          duration: totalDuration,
+          tags: entry.tags,
+          parentId: entry.parentId,
+          path: newPath,
+          depth: newDepth,
+          updatedAt: toUTC(new Date()),
+        });
+      } else {
+        await db.projects.update(entry.id, {
+          title: entry.title,
+          notes: entry.notes || "",
+          segments: entry.segments,
+          duration: totalDuration,
+          tags: entry.tags,
+          updatedAt: toUTC(new Date()),
+        });
+      }
     } catch (error) {
       console.error("Error updating entry:", error);
     }
   },
-  
+
   deleteEntry: async (id: string) => {
     try {
-      await db.timeEntries.delete(id);
+      await db.projects.delete(id);
     } catch (error) {
       console.error("Error deleting entry:", error);
+    }
+  },
+
+  setParentForCurrentEntry: async (parentId: string | null) => {
+    try {
+      const { currentEntry } = get();
+      if (!currentEntry || !currentEntry.id) return;
+
+      const oldParentId = currentEntry.parentId;
+
+      if (oldParentId === parentId) return;
+
+      if (parentId && (await wouldCreateCycle(currentEntry.id, parentId))) {
+        console.error("Cannot set parent: it would create a cycle");
+        return;
+      }
+
+      if (oldParentId) {
+        const oldParent = await db.projects.get(oldParentId);
+        if (oldParent?.id) {
+          await db.projects.update(oldParent.id, {
+            childCount: Math.max(0, (oldParent.childCount ?? 1) - 1),
+            updatedAt: toUTC(new Date()),
+          });
+        } else {
+          console.error("Old parent project not found");
+        }
+      }
+
+      if (!parentId) {
+        await db.projects.update(currentEntry.id, {
+          parentId: null,
+          path: [],
+          depth: 0,
+          updatedAt: toUTC(new Date()),
+        });
+
+        console.log("Removed parent for entry:", currentEntry.id);
+
+        const updatedEntry = await db.projects.get(currentEntry.id);
+        set({ currentEntry: updatedEntry || null });
+        return;
+      }
+
+      const newParent = await db.projects.get(parentId);
+      if (!newParent?.id) {
+        console.error("New parent project not found");
+        return;
+      }
+
+      const newPath = [...(newParent.path ?? []), newParent.id];
+      const newDepth = newParent.depth + 1;
+
+      await db.projects.update(currentEntry.id, {
+        parentId,
+        path: newPath,
+        depth: newDepth,
+        updatedAt: toUTC(new Date()),
+      });
+
+      await db.projects.update(parentId, {
+        childCount: (newParent.childCount ?? 0) + 1,
+        updatedAt: toUTC(new Date()),
+      });
+
+      console.log("Set parent:", parentId, "for entry:", currentEntry.id);
+
+      const updatedEntry = await db.projects.get(currentEntry.id);
+      set({ currentEntry: updatedEntry || null });
+    } catch (error) {
+      console.error("Error setting parent:", error);
     }
   },
 }));
