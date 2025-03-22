@@ -1,9 +1,11 @@
 # Chronos - Your Personal Productivity Manager
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.2.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.2.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0.0-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Zustand](https://img.shields.io/badge/Zustand-5.0.3-brown?style=for-the-badge&logo=npm)](https://github.com/pmndrs/zustand)
+[![Dexie.js](https://img.shields.io/badge/Dexie.js-4.0.11-purple?style=for-the-badge&logo=npm)](https://dexie.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.txt)
 
 ## 📝 Description
