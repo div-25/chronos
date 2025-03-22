@@ -73,14 +73,14 @@ export function TimeDistributionChart() {
       });
 
       // Convert to array and sort by date
-      let data: ChartData[] = Array.from(dateMap)
+      const data: ChartData[] = Array.from(dateMap)
         .map(([date, minutes]) => ({
           date,
           minutes,
         }))
         .sort((a, b) => {
-          const [aMonth, aDay] = a.date.split('/').map(Number);
-          const [bMonth, bDay] = b.date.split('/').map(Number);
+          const [aMonth, aDay] = a.date.split("/").map(Number);
+          const [bMonth, bDay] = b.date.split("/").map(Number);
           // First compare months
           if (aMonth !== bMonth) {
             return aMonth - bMonth;
