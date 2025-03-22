@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTimeStore } from '@/store/timeStore';
 import { Project } from '@/lib/db';
 import { formatDate, formatDuration } from '@/lib/utils';
-import { EditEntryModal } from './EditEntryModal';
+import { EditEntryModal } from '@/components/projects/EditEntryModal';
 
 export function ProjectsList() {
   const [entries, setEntries] = useState<Project[]>([]);

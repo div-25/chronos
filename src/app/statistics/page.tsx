@@ -1,6 +1,6 @@
 "use client";
 
-import { TagStats } from '@/components/timer/TagStats';
+import { TagStats } from '@/components/analytics/TagStats';
 
 export default function StatisticsPage() {
   return (
