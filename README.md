@@ -15,10 +15,12 @@ Chronos is a time tracking application designed to help you monitor and manage y
 ## ✨ Features
 
 - ⏱️ Time tracking with start, pause, and stop functionality
-- 📊 Basic statistics by tags
-- 📝 Add notes to time entries
+- 📊 Cool statistics
+- 📝 Add notes and tags to your projects
+- 🔗 Support nesting of projects
 - 🏷️ Tag-based organization
-- 💾 Offline support with IndexedDB
+- 💾 In-browser data storage
+- ⬇️ Export/import in CSV anytime
 - 📱 Responsive design
 
 ## 🛠️ Technologies
