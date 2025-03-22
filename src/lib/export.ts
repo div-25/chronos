@@ -1,5 +1,4 @@
 import { db, TimeSegment, Project } from './db';
-import { toUTC } from './utils';
 
 export async function exportToCSV(): Promise<string> {
   const projects = await db.projects.toArray();
@@ -180,9 +179,9 @@ export async function importFromCSV(file: File): Promise<void> {
 
 // Helper functions for parsing data
 function parseSegmentData(rowData: Record<string, string>): TimeSegment | null {
-  const startTime = toUTC(new Date(rowData['Segment Start Time']));
+  const startTime = new Date(rowData['Segment Start Time']);
   const endTimeStr = rowData['Segment End Time'];
-  const endTime = endTimeStr ? toUTC(new Date(endTimeStr)) : null;
+  const endTime = endTimeStr ? new Date(endTimeStr) : null;
   const duration = parseInt(rowData['Segment Duration (sec)'], 10);
   
   if (!isValidDate(startTime) || (endTimeStr && !isValidDate(endTime as Date)) || isNaN(duration)) {
