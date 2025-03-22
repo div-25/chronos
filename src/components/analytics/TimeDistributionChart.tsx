@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { useTimeStore } from "@/store/timeStore";
 import { Project } from "@/lib/db";
-import { formatDate, formatDateInMMDD, toLocalTime } from "@/lib/utils";
+import { formatDateInMMDD, toLocalTime } from "@/lib/utils";
 
 interface ChartData {
   date: string;
@@ -159,7 +159,24 @@ export function TimeDistributionChart() {
                 backgroundColor: "#1F2937",
                 border: "1px solid #374151",
               }}
-              labelFormatter={(date) => formatDate(new Date(date))}
+              labelFormatter={(date) => {
+                const [month, day] = date.split("/").map(Number);
+                const monthNames = [
+                  "January",
+                  "February",
+                  "March",
+                  "April",
+                  "May",
+                  "June",
+                  "July",
+                  "August",
+                  "September",
+                  "October",
+                  "November",
+                  "December",
+                ];
+                return `${monthNames[month - 1]} ${day}`;
+              }}
               formatter={(value: number) => [
                 `${Math.floor(value / 60)}h ${value % 60}m`,
                 "Time",
