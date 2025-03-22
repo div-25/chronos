@@ -196,8 +196,8 @@ function convertTimeEntryToProject(rowData: Record<string, string>): Partial<Pro
   return {
     id: rowData['ID'],
     title: rowData['Title'],
-    notes: rowData['Notes'],
-    tags: rowData['Tags'] ? rowData['Tags'].split(';') : [],
+    notes: rowData['Notes'] === '"' ? '' : rowData['Notes'] || '',  // Fix for empty notes
+    tags: rowData['Tags'] === '"' ? [] : (rowData['Tags'] ? rowData['Tags'].split(';') : []),  // Fix for empty tags
     duration: parseInt(rowData['Total Duration (sec)'], 10),
     createdAt: new Date(rowData['Created At']),
     updatedAt: new Date(rowData['Updated At']),
@@ -217,8 +217,8 @@ function parseProjectData(rowData: Record<string, string>): Partial<Project> {
     path: rowData['Path'] ? rowData['Path'].split(';') : [],
     depth: parseInt(rowData['Depth'], 10) || 0,
     childCount: parseInt(rowData['Child Count'], 10) || 0,
-    notes: rowData['Notes'],
-    tags: rowData['Tags'] ? rowData['Tags'].split(';') : [],
+    notes: rowData['Notes'] === '"' ? '' : rowData['Notes'] || '',  // Fix for empty notes
+    tags: rowData['Tags'] === '"' ? [] : (rowData['Tags'] ? rowData['Tags'].split(';') : []),  // Fix for empty tags
     duration: parseInt(rowData['Total Duration (sec)'], 10),
     createdAt: new Date(rowData['Created At']),
     updatedAt: new Date(rowData['Updated At']),
