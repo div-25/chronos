@@ -33,7 +33,7 @@ export function TimeDistributionChart() {
     const prepareChartData = async () => {
       const entries = await getAllProjects();
       const dateMap = new Map<string, number>();
-      const endDate = new Date();  // Returns date in local time.
+      const endDate = new Date(); // Returns date in local time.
       const startDate = new Date(endDate);
 
       // Set end date to end of current day in local time
@@ -57,14 +57,21 @@ export function TimeDistributionChart() {
 
       // Initialize all dates in range with 0 minutes
       for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
-        dateMap.set(formatDateInMMDD(d), 0);
+        const dateKey =
+          selectedPeriod === "year"
+            ? `${d.getFullYear()}/${formatDateInMMDD(d)}`
+            : formatDateInMMDD(d);
+        dateMap.set(dateKey, 0);
       }
 
       // Aggregate minutes per day
       entries.forEach((entry: Project) => {
         entry.segments.forEach((segment) => {
           const localDate = toLocalTime(new Date(segment.startTime));
-          const dateKey = formatDateInMMDD(localDate);
+          const dateKey =
+            selectedPeriod === "year"
+              ? `${localDate.getFullYear()}/${formatDateInMMDD(localDate)}`
+              : formatDateInMMDD(localDate);
           if (dateMap.has(dateKey)) {
             const minutes = Math.floor((segment.duration || 0) / 60);
             dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + minutes);
@@ -78,16 +85,9 @@ export function TimeDistributionChart() {
           date,
           minutes,
         }))
-        .sort((a, b) => {
-          const [aMonth, aDay] = a.date.split("/").map(Number);
-          const [bMonth, bDay] = b.date.split("/").map(Number);
-          // First compare months
-          if (aMonth !== bMonth) {
-            return aMonth - bMonth;
-          }
-          // If months are same, compare days
-          return aDay - bDay;
-        });
+        .sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
 
       // Calculate 7-day moving average if enabled
       if (showMovingAverage) {
@@ -144,6 +144,24 @@ export function TimeDistributionChart() {
             <XAxis
               dataKey="date"
               tickFormatter={(date) => {
+                if (selectedPeriod === "year") {
+                  const monthShortNames = [
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "June",
+                    "July",
+                    "Aug",
+                    "Sept",
+                    "Oct",
+                    "Nov",
+                    "Dec",
+                  ];
+                  const [year, month] = date.split("/");
+                  return `${monthShortNames[month - 1]} ${year % 100}`;
+                }
                 return date;
               }}
               stroke="#9CA3AF"
@@ -160,7 +178,6 @@ export function TimeDistributionChart() {
                 border: "1px solid #374151",
               }}
               labelFormatter={(date) => {
-                const [month, day] = date.split("/").map(Number);
                 const monthNames = [
                   "January",
                   "February",
@@ -175,10 +192,16 @@ export function TimeDistributionChart() {
                   "November",
                   "December",
                 ];
-                return `${monthNames[month - 1]} ${day}`;
+                if (selectedPeriod === "year") {
+                  const [year, month] = date.split("/");
+                  return `${monthNames[month - 1]} ${year}`;
+                } else {
+                  const [month, day] = date.split("/").map(Number);
+                  return `${monthNames[month - 1]} ${day}`;
+                }
               }}
               formatter={(value: number) => [
-                `${Math.floor(value / 60)}h ${value % 60}m`,
+                `${Math.floor(value / 60)}h ${Math.floor(value % 60)}m`,
                 "Time",
               ]}
             />
