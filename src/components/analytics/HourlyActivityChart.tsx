@@ -41,7 +41,7 @@ export function HourlyActivityChart() {
       const entries = await getAllProjects();
       const weekdayHourlyData = new Array(24).fill(0); // Index 0 = 00:00, Index 23 = 23:00
 
-      const endDate = toLocalTime(new Date());
+      const endDate = new Date();  // Returns date in local time.
       const startDate = new Date(endDate);
       let numberOfDays = 7; // Default for 'week'
 

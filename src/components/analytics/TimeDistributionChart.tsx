@@ -33,7 +33,7 @@ export function TimeDistributionChart() {
     const prepareChartData = async () => {
       const entries = await getAllProjects();
       const dateMap = new Map<string, number>();
-      const endDate = toLocalTime(new Date());
+      const endDate = new Date();  // Returns date in local time.
       const startDate = new Date(endDate);
 
       // Set end date to end of current day in local time

@@ -50,7 +50,7 @@ export function ProjectTimeBreakdown() {
         return;
       }
 
-      const endDate = toLocalTime(new Date());
+      const endDate = new Date();  // Returns date in local time.
       const startDate = new Date(endDate);
 
       endDate.setHours(23, 59, 59, 999);
