@@ -37,6 +37,7 @@ interface TimeState {
   resumeTask: (entryId: string) => Promise<void>;
   updateDisplayTime: (time: number) => void;
   getRecentEntries: () => Promise<Project[]>;
+  getAllProjects: () => Promise<Project[]>;
   updateEntry: (entry: Project) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   setParentForCurrentEntry: (parentId: string | null) => Promise<void>;
@@ -347,6 +348,17 @@ export const useTimeStore = create<TimeState>((set, get) => ({
         .toArray();
     } catch (error) {
       console.error("Error fetching projects:", error);
+      return [];
+    }
+  },
+
+  getAllProjects: async () => {
+    try {
+      const allProjects = await db.projects.toArray();
+      console.log("Fetched all projects count:", allProjects.length);
+      return allProjects;
+    } catch (error) {
+      console.error("Error fetching all projects:", error);
       return [];
     }
   },

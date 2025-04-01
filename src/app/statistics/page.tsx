@@ -1,7 +1,8 @@
 "use client";
 
-import { TagStats } from '@/components/analytics/TagStats';
 import { TimeDistributionChart } from '@/components/analytics/TimeDistributionChart';
+import { HourlyActivityChart } from '@/components/analytics/HourlyActivityChart';
+import { ProjectTimeBreakdown } from '@/components/analytics/ProjectTimeBreakdown';
 
 export default function StatisticsPage() {
   return (
@@ -10,6 +11,8 @@ export default function StatisticsPage() {
         <h1 className="text-3xl font-bold">Chronos Statistics</h1>
       </div>
       <TimeDistributionChart/>
+      <HourlyActivityChart/>
+      <ProjectTimeBreakdown/>
     </main>
   );
 }

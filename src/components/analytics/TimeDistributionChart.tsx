@@ -27,11 +27,11 @@ export function TimeDistributionChart() {
   >("week");
   const [showMovingAverage, setShowMovingAverage] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-  const { getRecentEntries } = useTimeStore();
+  const { getAllProjects } = useTimeStore();
 
   useEffect(() => {
     const prepareChartData = async () => {
-      const entries = await getRecentEntries();
+      const entries = await getAllProjects();
       const dateMap = new Map<string, number>();
       const endDate = toLocalTime(new Date());
       const startDate = new Date(endDate);
@@ -105,11 +105,11 @@ export function TimeDistributionChart() {
     };
 
     prepareChartData();
-  }, [getRecentEntries, selectedPeriod, showMovingAverage]);
+  }, [getAllProjects, selectedPeriod, showMovingAverage]);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 shadow-lg mb-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Time Distribution</h2>
         <div className="flex space-x-4">
           {selectedPeriod !== "week" && (

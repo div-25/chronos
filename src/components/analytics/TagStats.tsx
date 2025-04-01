@@ -14,14 +14,14 @@ interface TagStat {
 export function TagStats() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { getRecentEntries } = useTimeStore();
+  const { getAllProjects } = useTimeStore();
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'all'>('week');
   
   useEffect(() => {
     const loadEntries = async () => {
       try {
         setIsLoading(true);
-        const recentEntries = await getRecentEntries();
+        const recentEntries = await getAllProjects();
         setEntries(recentEntries);
       } catch (error) {
         console.error("Error loading entries:", error);
@@ -41,7 +41,7 @@ export function TagStats() {
     return () => {
       clearInterval(refreshInterval);
     };
-  }, [getRecentEntries]);
+  }, [getAllProjects]);
   
   const filteredEntries = useMemo(() => {
     if (selectedPeriod === 'all') {
