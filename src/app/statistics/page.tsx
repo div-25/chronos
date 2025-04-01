@@ -10,7 +10,6 @@ export default function StatisticsPage() {
         <h1 className="text-3xl font-bold">Chronos Statistics</h1>
       </div>
       <TimeDistributionChart/>
-      <TagStats/>
     </main>
   );
 }
