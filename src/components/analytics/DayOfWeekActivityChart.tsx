@@ -28,7 +28,7 @@ const formatDuration = (minutes: number): string => {
 
 export function DayOfWeekActivityChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">(
-    "month"
+    "week"
   );
   const [chartData, setChartData] = useState<DayData[]>([]);
   const { getAllProjects } = useTimeStore();

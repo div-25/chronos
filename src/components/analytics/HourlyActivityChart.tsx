@@ -32,7 +32,7 @@ const formatMinutes = (totalMinutes: number): string => {
 export function HourlyActivityChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<
     "today" | "week" | "month" | "year"
-  >("week");
+  >("today");
   const [chartData, setChartData] = useState<HourlyChartData[]>([]);
   const { getAllProjects } = useTimeStore();
 
