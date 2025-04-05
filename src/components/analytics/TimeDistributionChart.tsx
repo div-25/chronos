@@ -116,8 +116,13 @@ export function TimeDistributionChart() {
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 shadow-lg mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Time Distribution</h2>
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-bold">Time Distribution</h2>
+          <span className="text-sm text-gray-400">
+            Total time this {selectedPeriod}: {calculateTotalTime()}
+          </span>
+        </div>
         <div className="flex space-x-4 items-center">
           {selectedPeriod !== "week" && (
             <label className="flex items-center space-x-2">
@@ -143,9 +148,6 @@ export function TimeDistributionChart() {
           </select>
         </div>
       </div>
-      <span className="text-sm text-gray-400">
-        Total time this {selectedPeriod}: {calculateTotalTime()}
-      </span>
 
       <div className="h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
