@@ -31,7 +31,7 @@ const formatMinutes = (totalMinutes: number): string => {
 
 export function HourlyActivityChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<
-    "week" | "month" | "year"
+    "today" | "week" | "month" | "year"
   >("week");
   const [chartData, setChartData] = useState<HourlyChartData[]>([]);
   const { getAllProjects } = useTimeStore();
@@ -48,6 +48,10 @@ export function HourlyActivityChart() {
       // Set end date to end of current day in local time
       endDate.setHours(23, 59, 59, 999);
       switch (selectedPeriod) {
+        case "today":
+          startDate.setDate(endDate.getDate());
+          numberOfDays = 1;
+          break;
         case "week":
           startDate.setDate(endDate.getDate() - 6);
           numberOfDays = 7;
@@ -199,10 +203,11 @@ export function HourlyActivityChart() {
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as "week" | "month" | "year")
+              setSelectedPeriod(e.target.value as "today" | "week" | "month" | "year")
             }
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >
+            <option value="today">Today</option>
             <option value="week">Last 7 days</option>
             <option value="month">Last 30 days</option>
             <option value="year">Last 365 days</option>

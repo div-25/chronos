@@ -34,7 +34,7 @@ interface ProcessedProjectData {
 
 export function ProjectTimeBreakdown() {
   const [selectedPeriod, setSelectedPeriod] = useState<
-    "week" | "month" | "year"
+    "today" | "week" | "month" | "year"
   >("week");
   const [displayProjects, setDisplayProjects] = useState<
     ProcessedProjectData[]
@@ -55,6 +55,9 @@ export function ProjectTimeBreakdown() {
 
       endDate.setHours(23, 59, 59, 999);
       switch (selectedPeriod) {
+        case "today":
+          startDate.setDate(endDate.getDate());
+          break;
         case "week":
           startDate.setDate(endDate.getDate() - 6);
           break;
@@ -211,10 +214,11 @@ export function ProjectTimeBreakdown() {
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as "week" | "month" | "year")
+              setSelectedPeriod(e.target.value as "today" | "week" | "month" | "year")
             }
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >
+            <option value="today">Today</option>
             <option value="week">Last 7 days</option>
             <option value="month">Last 30 days</option>
             <option value="year">Last 365 days</option>
