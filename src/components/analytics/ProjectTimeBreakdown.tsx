@@ -56,13 +56,13 @@ export function ProjectTimeBreakdown() {
       endDate.setHours(23, 59, 59, 999);
       switch (selectedPeriod) {
         case "week":
-          startDate.setDate(startDate.getDate() - 6);
+          startDate.setDate(endDate.getDate() - 6);
           break;
         case "month":
-          startDate.setMonth(startDate.getMonth() - 1);
+          startDate.setDate(endDate.getDate() - 29);
           break;
         case "year":
-          startDate.setFullYear(startDate.getFullYear() - 1);
+          startDate.setDate(endDate.getDate() - 364);
           break;
       }
       startDate.setHours(0, 0, 0, 0);

@@ -212,7 +212,7 @@ function parseProjectData(rowData: Record<string, string>): Partial<Project> {
   return {
     id: rowData['ID'],
     title: rowData['Title'],
-    parentId: rowData['Parent ID'] || null,
+    parentId: rowData['Parent ID'] === '"' ? null : rowData['Parent ID'] || null,
     path: rowData['Path'] ? rowData['Path'].split(';') : [],
     depth: parseInt(rowData['Depth'], 10) || 0,
     childCount: parseInt(rowData['Child Count'], 10) || 0,
