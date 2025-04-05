@@ -237,14 +237,14 @@ export function TimeDistributionChart() {
                 dataKey="minutes"
                 stroke="#3B82F6"
                 fill="#3B82F6"
-                fillOpacity={0.2}
+                fillOpacity={0.6}
                 name="Minutes worked"
               />
               {showMovingAverage && selectedPeriod != "week" && (
                 <Area
                   type="monotone"
                   dataKey="movingAverage"
-                  stroke="#10B981"
+                  stroke="#34D399"
                   fill="#10B981"
                   fillOpacity={0.1}
                   name="7-day rolling average"
