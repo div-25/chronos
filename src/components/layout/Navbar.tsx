@@ -4,6 +4,8 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { exportToCSV, downloadCSV, importFromCSV } from '@/lib/export';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { FiDownload, FiUpload } from 'react-icons/fi';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -16,9 +18,10 @@ export function Navbar() {
   };
   
   const handleExport = async () => {
-    setExporting(true);
     try {
       const csvContent = await exportToCSV();
+      // Only show loading state during CSV generation, not during file save
+      setExporting(true);
       downloadCSV(csvContent);
     } catch (error) {
       console.error('Export failed:', error);
@@ -89,9 +92,16 @@ export function Navbar() {
             <button
               onClick={handleImportClick}
               disabled={importing}
-              className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-sm disabled:opacity-50"
+              className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-sm disabled:opacity-50 w-24 flex items-center justify-center gap-2"
             >
-              {importing ? 'Importing...' : 'Import'}
+              {importing ? (
+                <AiOutlineLoading3Quarters className="animate-spin" />
+              ) : (
+                <>
+                  <FiUpload />
+                  <span>Import</span>
+                </>
+              )}
             </button>
             <input
               type="file"
@@ -103,13 +113,20 @@ export function Navbar() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm disabled:opacity-50"
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm disabled:opacity-50 w-24 flex items-center justify-center gap-2"
             >
-              {exporting ? 'Exporting...' : 'Export'}
+              {exporting ? (
+                <AiOutlineLoading3Quarters className="animate-spin" />
+              ) : (
+                <>
+                  <FiDownload />
+                  <span>Export</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
     </nav>
   );
-} 
+}
