@@ -23,7 +23,7 @@ interface ChartData {
 
 export function TimeDistributionChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<
-    "week" | "month" | "year"
+    "today" | "week" | "month" | "year"
   >("week");
   const [showMovingAverage, setShowMovingAverage] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -46,6 +46,9 @@ export function TimeDistributionChart() {
       // Set end date to end of current day in local time
       endDate.setHours(23, 59, 59, 999);
       switch (selectedPeriod) {
+        case "today":
+          startDate.setDate(endDate.getDate());
+          break;
         case "week":
           startDate.setDate(endDate.getDate() - 6);
           break;
@@ -124,7 +127,7 @@ export function TimeDistributionChart() {
           </span>
         </div>
         <div className="flex space-x-4 items-center">
-          {selectedPeriod !== "week" && (
+          {selectedPeriod !== "week" && selectedPeriod !== "today" && (
             <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -138,10 +141,11 @@ export function TimeDistributionChart() {
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as "week" | "month" | "year")
+              setSelectedPeriod(e.target.value as "today" | "week" | "month" | "year")
             }
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >
+            <option value="today">Today</option>
             <option value="week">Last 7 days</option>
             <option value="month">Last 30 days</option>
             <option value="year">Last 365 days</option>
@@ -149,96 +153,107 @@ export function TimeDistributionChart() {
         </div>
       </div>
 
-      <div className="h-[400px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis
-              dataKey="date"
-              tickFormatter={(date) => {
-                if (selectedPeriod === "year") {
-                  const monthShortNames = [
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
+      {selectedPeriod === "today" ? (
+        <div className="h-[400px] flex flex-col items-center justify-center">
+          <div className="text-3xl font-bold mb-4">
+            Total time today: {calculateTotalTime()}
+          </div>
+          <div className="text-xl text-gray-400">
+            Keep going strong! 💪
+          </div>
+        </div>
+      ) : (
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(date) => {
+                  if (selectedPeriod === "year") {
+                    const monthShortNames = [
+                      "Jan",
+                      "Feb",
+                      "Mar",
+                      "Apr",
+                      "May",
+                      "June",
+                      "July",
+                      "Aug",
+                      "Sept",
+                      "Oct",
+                      "Nov",
+                      "Dec",
+                    ];
+                    const [year, month] = date.split("/");
+                    return `${monthShortNames[month - 1]} ${year % 100}`;
+                  }
+                  return date;
+                }}
+                stroke="#9CA3AF"
+              />
+              <YAxis
+                stroke="#9CA3AF"
+                tickFormatter={(minutes) =>
+                  `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+                }
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1F2937",
+                  border: "1px solid #374151",
+                }}
+                labelFormatter={(date) => {
+                  const monthNames = [
+                    "January",
+                    "February",
+                    "March",
+                    "April",
                     "May",
                     "June",
                     "July",
-                    "Aug",
-                    "Sept",
-                    "Oct",
-                    "Nov",
-                    "Dec",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
                   ];
-                  const [year, month] = date.split("/");
-                  return `${monthShortNames[month - 1]} ${year % 100}`;
-                }
-                return date;
-              }}
-              stroke="#9CA3AF"
-            />
-            <YAxis
-              stroke="#9CA3AF"
-              tickFormatter={(minutes) =>
-                `${Math.floor(minutes / 60)}h ${minutes % 60}m`
-              }
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#1F2937",
-                border: "1px solid #374151",
-              }}
-              labelFormatter={(date) => {
-                const monthNames = [
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ];
-                if (selectedPeriod === "year") {
-                  const [year, month] = date.split("/");
-                  return `${monthNames[month - 1]} ${year}`;
-                } else {
-                  const [month, day] = date.split("/").map(Number);
-                  return `${monthNames[month - 1]} ${day}`;
-                }
-              }}
-              formatter={(value: number) => [
-                `${Math.floor(value / 60)}h ${Math.floor(value % 60)}m`,
-                "Time",
-              ]}
-            />
-            <Legend />
-            <Area
-              type="monotone"
-              dataKey="minutes"
-              stroke="#3B82F6"
-              fill="#3B82F6"
-              fillOpacity={0.2}
-              name="Minutes worked"
-            />
-            {showMovingAverage && (
+                  if (selectedPeriod === "year") {
+                    const [year, month] = date.split("/");
+                    return `${monthNames[month - 1]} ${year}`;
+                  } else {
+                    const [month, day] = date.split("/").map(Number);
+                    return `${monthNames[month - 1]} ${day}`;
+                  }
+                }}
+                formatter={(value: number) => [
+                  `${Math.floor(value / 60)}h ${Math.floor(value % 60)}m`,
+                  "Time",
+                ]}
+              />
+              <Legend />
               <Area
                 type="monotone"
-                dataKey="movingAverage"
-                stroke="#10B981"
-                fill="#10B981"
-                fillOpacity={0.1}
-                name="7-day rolling average"
+                dataKey="minutes"
+                stroke="#3B82F6"
+                fill="#3B82F6"
+                fillOpacity={0.2}
+                name="Minutes worked"
               />
-            )}
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+              {showMovingAverage && (
+                <Area
+                  type="monotone"
+                  dataKey="movingAverage"
+                  stroke="#10B981"
+                  fill="#10B981"
+                  fillOpacity={0.1}
+                  name="7-day rolling average"
+                />
+              )}
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
