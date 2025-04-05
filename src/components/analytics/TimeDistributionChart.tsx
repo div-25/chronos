@@ -29,6 +29,13 @@ export function TimeDistributionChart() {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const { getAllProjects } = useTimeStore();
 
+  const calculateTotalTime = () => {
+    const totalMinutes = chartData.reduce((sum, data) => sum + data.minutes, 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
   useEffect(() => {
     const prepareChartData = async () => {
       const entries = await getAllProjects();
@@ -111,7 +118,7 @@ export function TimeDistributionChart() {
     <div className="bg-gray-800 rounded-lg p-6 shadow-lg mb-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Time Distribution</h2>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 items-center">
           {selectedPeriod !== "week" && (
             <label className="flex items-center space-x-2">
               <input
@@ -136,6 +143,9 @@ export function TimeDistributionChart() {
           </select>
         </div>
       </div>
+      <span className="text-sm text-gray-400">
+        Total time this {selectedPeriod}: {calculateTotalTime()}
+      </span>
 
       <div className="h-[400px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -221,7 +231,7 @@ export function TimeDistributionChart() {
                 stroke="#10B981"
                 fill="#10B981"
                 fillOpacity={0.1}
-                name="7-day average"
+                name="7-day rolling average"
               />
             )}
           </AreaChart>
