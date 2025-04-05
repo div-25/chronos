@@ -240,7 +240,7 @@ export function TimeDistributionChart() {
                 fillOpacity={0.2}
                 name="Minutes worked"
               />
-              {showMovingAverage && (
+              {showMovingAverage && selectedPeriod != "week" && (
                 <Area
                   type="monotone"
                   dataKey="movingAverage"
