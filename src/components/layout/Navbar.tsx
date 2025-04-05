@@ -1,22 +1,22 @@
 "use client";
 
-import { useState, useRef } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { exportToCSV, downloadCSV, importFromCSV } from '@/lib/export';
-import { AiOutlineLoading3Quarters } from 'react-icons/ai';
-import { FiDownload, FiUpload } from 'react-icons/fi';
+import { useState, useRef } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { exportToCSV, downloadCSV, importFromCSV } from "@/lib/export";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FiDownload, FiUpload } from "react-icons/fi";
 
 export function Navbar() {
   const pathname = usePathname();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const isActive = (path: string) => {
     return pathname === path;
   };
-  
+
   const handleExport = async () => {
     try {
       const csvContent = await exportToCSV();
@@ -24,7 +24,7 @@ export function Navbar() {
       setExporting(true);
       downloadCSV(csvContent);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error("Export failed:", error);
     } finally {
       setExporting(false);
     }
@@ -34,7 +34,9 @@ export function Navbar() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -43,18 +45,20 @@ export function Navbar() {
       await importFromCSV(file);
       // Reset the file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
       // Reload the page to show the imported data
       window.location.reload();
     } catch (error) {
-      console.error('Import failed:', error);
-      alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Import failed:", error);
+      alert(
+        `Import failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
       setImporting(false);
     }
   };
-  
+
   return (
     <nav className="bg-gray-900 shadow-md">
       <div className="container mx-auto px-4 py-3 max-w-4xl">
@@ -63,31 +67,31 @@ export function Navbar() {
             <Link href="/" className="text-xl font-bold text-white">
               Chronos
             </Link>
-            
+
             <div className="ml-8 flex space-x-4">
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActive('/') 
-                    ? 'bg-gray-700 text-white' 
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  isActive("/")
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 Dashboard
               </Link>
-              <Link 
-                href="/statistics" 
+              <Link
+                href="/statistics"
                 className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  isActive('/statistics') 
-                    ? 'bg-gray-700 text-white' 
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  isActive("/statistics")
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 Statistics
               </Link>
             </div>
           </div>
-          
+
           <div className="flex space-x-2">
             <button
               onClick={handleImportClick}
