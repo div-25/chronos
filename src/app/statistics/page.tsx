@@ -3,6 +3,7 @@
 import { TimeDistributionChart } from '@/components/analytics/TimeDistributionChart';
 import { HourlyActivityChart } from '@/components/analytics/HourlyActivityChart';
 import { ProjectTimeBreakdown } from '@/components/analytics/ProjectTimeBreakdown';
+import { DayOfWeekActivityChart } from '@/components/analytics/DayOfWeekActivityChart';
 
 export default function StatisticsPage() {
   return (
@@ -12,6 +13,7 @@ export default function StatisticsPage() {
       </div>
       <TimeDistributionChart/>
       <HourlyActivityChart/>
+      <DayOfWeekActivityChart/>
       <ProjectTimeBreakdown/>
     </main>
   );
