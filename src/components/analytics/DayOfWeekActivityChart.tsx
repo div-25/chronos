@@ -27,9 +27,9 @@ const formatDuration = (minutes: number): string => {
 };
 
 export function DayOfWeekActivityChart() {
-  const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">(
-    "week"
-  );
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    "week" | "month" | "year"
+  >("week");
   const [chartData, setChartData] = useState<DayData[]>([]);
   const { getAllProjects } = useTimeStore();
 
@@ -37,8 +37,6 @@ export function DayOfWeekActivityChart() {
     const prepareChartData = async () => {
       const entries = await getAllProjects();
       const dayTotals = new Array(7).fill(0);
-      const dayCounts = new Array(7).fill(0);
-
       const endDate = new Date();
       const startDate = new Date(endDate);
 
@@ -65,10 +63,16 @@ export function DayOfWeekActivityChart() {
             const dayOfWeek = segmentDate.getDay();
             const minutes = Math.floor(segment.duration / 60);
             dayTotals[dayOfWeek] += minutes;
-            dayCounts[dayOfWeek]++;
           }
         });
       });
+
+      // Calculate day counts
+      const dayCounts = new Array(7).fill(0);
+      for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dayOfWeek = d.getDay();
+        dayCounts[dayOfWeek]++;
+      }
 
       // Calculate averages and find maximum
       const averages = dayTotals.map((total, index) =>
@@ -83,7 +87,8 @@ export function DayOfWeekActivityChart() {
         return {
           name,
           averageMinutes: averages[jsIndex],
-          percentage: maxAverage > 0 ? (averages[jsIndex] / maxAverage) * 100 : 0,
+          percentage:
+            maxAverage > 0 ? (averages[jsIndex] / maxAverage) * 100 : 0,
         };
       });
 
