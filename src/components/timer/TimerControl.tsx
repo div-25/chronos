@@ -12,6 +12,8 @@ export function TimerControl() {
     isPaused,
     currentEntry,
     elapsedTime,
+    todayTime,
+    weekTime,
     totalTime,
     handleStartTimer,
     pauseTimer,
@@ -272,10 +274,15 @@ export function TimerControl() {
       ) : (
         <div className="space-y-4">
           <div className="bg-gray-900 rounded-lg p-6 border border-gray-700 shadow-inner">
-            <div className="text-5xl font-mono text-center py-4 text-white">
-              {formatDuration(elapsedTime)}
+            <div className="text-center">
+              <div className="text-sm font-mono text-gray-400 mb-1">
+                Current Session
+              </div>
+              <div className="text-5xl font-mono text-white py-2">
+                {formatDuration(elapsedTime)}
+              </div>
               {isPaused && (
-                <div className="text-yellow-500 text-xl mt-2 flex items-center justify-center">
+                <div className="text-yellow-500 text-lg mt-1 flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-1"
@@ -294,11 +301,32 @@ export function TimerControl() {
                 </div>
               )}
             </div>
-            <div className="text-sm font-mono text-center text-gray-400 -mt-2 mb-2">
-              Current Session
-            </div>
-            <div className="text-2xl font-mono text-center py-2 text-emerald-400">
-              Total: {formatDuration(totalTime)}
+
+            <div className="mt-6 pt-4 border-t border-gray-700 flex justify-between text-gray-300">
+              <div className="text-center">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Today
+                </div>
+                <div className="text-sm font-mono">
+                  {formatDuration(todayTime)}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  This Week
+                </div>
+                <div className="text-sm font-mono">
+                  {formatDuration(weekTime)}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  All Time
+                </div>
+                <div className="text-sm font-mono">
+                  {formatDuration(totalTime)}
+                </div>
+              </div>
             </div>
           </div>
 

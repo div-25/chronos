@@ -1,9 +1,9 @@
 "use client";
 
-import { TimeDistributionChart } from '@/components/analytics/TimeDistributionChart';
-import { HourlyActivityChart } from '@/components/analytics/HourlyActivityChart';
-import { ProjectTimeBreakdown } from '@/components/analytics/ProjectTimeBreakdown';
-import { DayOfWeekActivityChart } from '@/components/analytics/DayOfWeekActivityChart';
+import { TimeDistributionChart } from "@/components/analytics/TimeDistributionChart";
+import { HourlyActivityChart } from "@/components/analytics/HourlyActivityChart";
+import { ProjectTimeBreakdown } from "@/components/analytics/ProjectTimeBreakdown";
+import { DayOfWeekActivityChart } from "@/components/analytics/DayOfWeekActivityChart";
 
 export default function StatisticsPage() {
   return (
@@ -11,10 +11,10 @@ export default function StatisticsPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Chronos Statistics</h1>
       </div>
-      <TimeDistributionChart/>
-      <HourlyActivityChart/>
-      <DayOfWeekActivityChart/>
-      <ProjectTimeBreakdown/>
+      <TimeDistributionChart />
+      <HourlyActivityChart />
+      <DayOfWeekActivityChart />
+      <ProjectTimeBreakdown />
     </main>
   );
 }

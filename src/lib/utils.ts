@@ -115,7 +115,7 @@ export function groupEntriesByDay(entries: TimeEntry[]): GroupedEntries[] {
   }));
 }
 
-export function formatDateInMMDD(date : Date) {
+export function formatDateInMMDD(date: Date) {
   const month = String(date.getMonth() + 1);
   const day = String(date.getDate());
 

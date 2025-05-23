@@ -263,7 +263,7 @@ export function HourlyActivityChart() {
               tickLine={false}
               domain={[0, 60]}
               ticks={[0, 15, 30, 45, 60]}
-              tickFormatter={(value: any) => `${value}m`}
+              tickFormatter={(value: number) => `${value}m`}
             />
             <Tooltip
               cursor={{ fill: "rgba(110, 110, 110, 0.2)" }} // Subtle hover effect
