@@ -1,7 +1,7 @@
 "use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Header() {
   const pathname = usePathname();
@@ -20,7 +20,7 @@ export function Header() {
             <li>
               <Link
                 href="/"
-                className={`hover:text-emerald-400 transition-colors ${isActive('/') ? 'text-emerald-400' : ''}`}
+                className={`hover:text-emerald-400 transition-colors ${isActive("/") ? "text-emerald-400" : ""}`}
               >
                 Dashboard
               </Link>

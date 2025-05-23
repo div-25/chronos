@@ -50,7 +50,7 @@ export function ProjectTimeBreakdown() {
         return;
       }
 
-      const endDate = new Date();  // Returns date in local time.
+      const endDate = new Date(); // Returns date in local time.
       const startDate = new Date(endDate);
 
       endDate.setHours(23, 59, 59, 999);
@@ -214,7 +214,9 @@ export function ProjectTimeBreakdown() {
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as "today" | "week" | "month" | "year")
+              setSelectedPeriod(
+                e.target.value as "today" | "week" | "month" | "year"
+              )
             }
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >

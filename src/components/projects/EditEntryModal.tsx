@@ -229,7 +229,10 @@ export function EditEntryModal({ entry, onClose }: EditEntryModalProps) {
                     // Filter out:
                     // 1. The current project itself
                     // 2. Any project that has the current entry in its path
-                    return project.id !== entry?.id && !project.path.includes(entry?.id || "");
+                    return (
+                      project.id !== entry?.id &&
+                      !project.path.includes(entry?.id || "")
+                    );
                   })
                   .map((project) => (
                     <option key={project.id} value={project.id}>

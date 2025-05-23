@@ -1,7 +1,7 @@
 "use client";
 
-import { TimerControl } from '@/components/timer/TimerControl';
-import { ProjectsList } from '@/components/projects/ProjectsList';
+import { TimerControl } from "@/components/timer/TimerControl";
+import { ProjectsList } from "@/components/projects/ProjectsList";
 
 export default function HomePage() {
   return (
