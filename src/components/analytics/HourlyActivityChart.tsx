@@ -22,7 +22,7 @@ interface HourlyChartData {
 // Helper function to format minutes into Hh Mm format
 const formatMinutes = (totalMinutes: number): string => {
   const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.round(totalMinutes % 60)
+  const minutes = Math.round(totalMinutes % 60);
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   }
@@ -41,7 +41,7 @@ export function HourlyActivityChart() {
       const entries = await getAllProjects();
       const weekdayHourlyData = new Array(24).fill(0); // Index 0 = 00:00, Index 23 = 23:00
 
-      const endDate = new Date();  // Returns date in local time.
+      const endDate = new Date(); // Returns date in local time.
       const startDate = new Date(endDate);
       let numberOfDays = 7; // Default for 'week'
 
@@ -112,7 +112,7 @@ export function HourlyActivityChart() {
             // Accumulate completed minutes within this chunk
             const minutesInChunk = Math.floor(durationMs / (60 * 1000));
             if (minutesInChunk > 0) {
-                 map[hour] = (map[hour] || 0) + minutesInChunk;
+              map[hour] = (map[hour] || 0) + minutesInChunk;
             }
           }
           // Advance time to the end of the chunk
@@ -124,7 +124,7 @@ export function HourlyActivityChart() {
       entries.forEach((entry: Project) => {
         entry.segments.forEach((segment) => {
           if (!segment.endTime || !segment.duration || segment.duration <= 0) {
-             return; // Skip segments without valid end time or duration
+            return; // Skip segments without valid end time or duration
           }
 
           const segmentStartLocal = toLocalTime(new Date(segment.startTime));
@@ -136,57 +136,74 @@ export function HourlyActivityChart() {
             return; // Segment is outside the analysis window
           }
 
-          const effectiveStart = segmentStartLocal < startDate ? startDate : segmentStartLocal;
-          const effectiveEnd = segmentEndLocal > endDate ? endDate : segmentEndLocal;
+          const effectiveStart =
+            segmentStartLocal < startDate ? startDate : segmentStartLocal;
+          const effectiveEnd =
+            segmentEndLocal > endDate ? endDate : segmentEndLocal;
 
           const startDay = getStartOfDay(effectiveStart);
           const endDay = getStartOfDay(effectiveEnd);
 
           // Case 1: Segment contained within a single day
           if (startDay.getTime() === endDay.getTime()) {
-            processSingleDayRange(effectiveStart, effectiveEnd, weekdayHourlyData); // Use actual map variable
+            processSingleDayRange(
+              effectiveStart,
+              effectiveEnd,
+              weekdayHourlyData
+            ); // Use actual map variable
           }
           // Case 2: Segment spans multiple days
           else {
             // 1. Process partial start day
             const endOfStartDay = getStartOfDay(addDays(effectiveStart, 1));
-            processSingleDayRange(effectiveStart, endOfStartDay, weekdayHourlyData); // Use actual map variable
+            processSingleDayRange(
+              effectiveStart,
+              endOfStartDay,
+              weekdayHourlyData
+            ); // Use actual map variable
 
             // 2. Process full days between start and end days
             const firstFullDayStart = endOfStartDay;
             const lastDayStart = endDay; // This is the start of the final partial day
 
             if (firstFullDayStart < lastDayStart) {
-              const fullDaysDurationMs = lastDayStart.getTime() - firstFullDayStart.getTime();
+              const fullDaysDurationMs =
+                lastDayStart.getTime() - firstFullDayStart.getTime();
               // Calculate full 24h days, using floor is safer for DST transitions
-              const numFullDays = Math.floor(fullDaysDurationMs / (24 * 60 * 60 * 1000));
+              const numFullDays = Math.floor(
+                fullDaysDurationMs / (24 * 60 * 60 * 1000)
+              );
 
               if (numFullDays > 0) {
                 for (let hr = 0; hr < 24; hr++) {
-                  weekdayHourlyData[hr] = (weekdayHourlyData[hr] || 0) + numFullDays * 60; // Use actual map variable
+                  weekdayHourlyData[hr] =
+                    (weekdayHourlyData[hr] || 0) + numFullDays * 60; // Use actual map variable
                 }
               }
             }
 
             // 3. Process partial end day (if the segment ends after midnight)
             if (effectiveEnd.getTime() > endDay.getTime()) {
-                 processSingleDayRange(endDay, effectiveEnd, weekdayHourlyData); // Use actual map variable
+              processSingleDayRange(endDay, effectiveEnd, weekdayHourlyData); // Use actual map variable
             }
           }
         });
       });
 
       // Calculate average minutes per hour and format for the chart
-      const data: HourlyChartData[] = weekdayHourlyData.map((totalMinutes, hour) => {
-        const averageMinutes = numberOfDays > 0 ? totalMinutes / numberOfDays : 0;
-        return {
-          hour: hour.toString().padStart(2, "0"), // Format hour as "00", "01", etc.
-          // Clamp average minutes to a max of 60 for visualization, though averages could exceed 60 if tracked across multiple devices simultaneously for >1hr on avg.
-          // Or better, let the Y-axis handle scaling beyond 60 if needed, but base interpretation on 60min = 100%.
-          // Let's keep the raw average for accuracy. The Y-axis domain will handle display.
-          averageMinutes: averageMinutes
-        };
-      });
+      const data: HourlyChartData[] = weekdayHourlyData.map(
+        (totalMinutes, hour) => {
+          const averageMinutes =
+            numberOfDays > 0 ? totalMinutes / numberOfDays : 0;
+          return {
+            hour: hour.toString().padStart(2, "0"), // Format hour as "00", "01", etc.
+            // Clamp average minutes to a max of 60 for visualization, though averages could exceed 60 if tracked across multiple devices simultaneously for >1hr on avg.
+            // Or better, let the Y-axis handle scaling beyond 60 if needed, but base interpretation on 60min = 100%.
+            // Let's keep the raw average for accuracy. The Y-axis domain will handle display.
+            averageMinutes: averageMinutes,
+          };
+        }
+      );
 
       console.log("Hourly chart data: ", data);
       setChartData(data);
@@ -203,7 +220,9 @@ export function HourlyActivityChart() {
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as "today" | "week" | "month" | "year")
+              setSelectedPeriod(
+                e.target.value as "today" | "week" | "month" | "year"
+              )
             }
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >
@@ -227,41 +246,51 @@ export function HourlyActivityChart() {
             }}
             barCategoryGap="0%"
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-            <XAxis dataKey="hour" stroke="#9CA3AF" tickLine={false} axisLine={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#374151"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="hour"
+              stroke="#9CA3AF"
+              tickLine={false}
+              axisLine={false}
+            />
             <YAxis
               stroke="#9CA3AF"
               axisLine={false}
               tickLine={false}
               domain={[0, 60]}
               ticks={[0, 15, 30, 45, 60]}
-              tickFormatter={(value) => `${value}m`}
+              tickFormatter={(value: any) => `${value}m`}
             />
             <Tooltip
-              cursor={{ fill: 'rgba(110, 110, 110, 0.2)' }} // Subtle hover effect
+              cursor={{ fill: "rgba(110, 110, 110, 0.2)" }} // Subtle hover effect
               contentStyle={{
                 backgroundColor: "#1F2937",
                 border: "1px solid #374151",
                 borderRadius: "4px",
               }}
-              labelFormatter={() => ''}
+              labelFormatter={() => ""}
               formatter={(value: number) => [
-                  `${formatMinutes(value)}`,
-                  "Avg. Time / Hour"
+                `${formatMinutes(value)}`,
+                "Avg. Time / Hour",
               ]}
             />
             <Bar
-                dataKey="averageMinutes"
-                name="Avg. Time / Hour"
-                fill="#3B82F6"
-                radius={[4, 4, 0, 0]}
-            >
-            </Bar>
+              dataKey="averageMinutes"
+              name="Avg. Time / Hour"
+              fill="#3B82F6"
+              radius={[4, 4, 0, 0]}
+            ></Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
       <p className="text-sm text-gray-400 text-center">
-        Shows how much work you did on average during a given hour of the day. A full bar (reaching 60m) means you worked for the entire hour on average during the selected time period.
+        Shows how much work you did on average during a given hour of the day. A
+        full bar (reaching 60m) means you worked for the entire hour on average
+        during the selected time period.
       </p>
     </div>
   );

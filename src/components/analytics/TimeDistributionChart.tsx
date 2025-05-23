@@ -141,7 +141,9 @@ export function TimeDistributionChart() {
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as "today" | "week" | "month" | "year")
+              setSelectedPeriod(
+                e.target.value as "today" | "week" | "month" | "year"
+              )
             }
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >
@@ -158,9 +160,7 @@ export function TimeDistributionChart() {
           <div className="text-3xl font-bold mb-4">
             Total time today: {calculateTotalTime()}
           </div>
-          <div className="text-xl text-gray-400">
-            Keep going strong! 💪
-          </div>
+          <div className="text-xl text-gray-400">Keep going strong! 💪</div>
         </div>
       ) : (
         <div className="h-[400px]">
