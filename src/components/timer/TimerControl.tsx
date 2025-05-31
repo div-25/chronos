@@ -80,7 +80,7 @@ export function TimerControl() {
     <div className="p-6 bg-gray-800 rounded-xl shadow-lg border border-gray-700">
       <div className="flex items-center mb-4">
         <div className="w-3 h-3 rounded-full mr-2 bg-emerald-500 animate-pulse"></div>
-        <h2 className="text-2xl font-bold">Time Tracker</h2>
+        <h2 className="text-2xl font-bold">Focus Timer 🎯</h2>
       </div>
 
       {!isTimerRunning && !isPaused ? (
