@@ -1,4 +1,5 @@
 import { db, TimeSegment, Project } from "./db";
+import { cleanSegments } from "./utils";
 
 export async function exportToCSV(): Promise<string> {
   const projects = await db.projects.toArray();
@@ -154,17 +155,26 @@ export async function importFromCSV(file: File): Promise<void> {
           projectData.segments[segmentIndex] = segment;
         }
 
-        // Convert map to array of projects
+        // Convert map to array of projects and clean segments
         const projects: Project[] = [];
 
         projectsMap.forEach(({ project, segments }) => {
-          const hasActiveSegment = segments.some(
-            (segment) => segment.endTime === null
+          // Clean segments and recalculate duration
+          const cleanedSegments = cleanSegments(segments);
+          const totalDuration = cleanedSegments.reduce(
+            (total: number, segment: TimeSegment) =>
+              total + (segment.duration || 0),
+            0
+          );
+
+          const hasActiveSegment = cleanedSegments.some(
+            (segment: TimeSegment) => segment.endTime === null
           );
 
           projects.push({
             ...project,
-            segments,
+            segments: cleanedSegments,
+            duration: totalDuration,
             isActive: hasActiveSegment,
           } as Project);
         });

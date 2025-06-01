@@ -1,5 +1,5 @@
 // Helper functions for formatting and other utilities
-import { TimeEntry } from "./db";
+import { TimeEntry, TimeSegment } from "./db";
 
 // Timezone conversion utilities
 export function toUTC(date: Date): Date {
@@ -120,4 +120,30 @@ export function formatDateInMMDD(date: Date) {
   const day = String(date.getDate());
 
   return `${month}/${day}`;
+}
+
+export function cleanSegments(segments: TimeSegment[]): TimeSegment[] {
+  if (!segments || !Array.isArray(segments)) return [];
+
+  return segments.filter((segment) => {
+    // Check if segment is valid
+    if (!segment) return false;
+
+    // Check for missing or invalid start time
+    if (!segment.startTime || !(segment.startTime instanceof Date))
+      return false;
+
+    // Check for missing or invalid end time
+    if (!segment.endTime || !(segment.endTime instanceof Date)) return false;
+
+    // Check for equal start/end times or invalid duration
+    if (
+      segment.startTime.getTime() === segment.endTime.getTime() ||
+      !segment.duration ||
+      segment.duration <= 0
+    )
+      return false;
+
+    return true;
+  });
 }
